@@ -3,7 +3,7 @@ from app.models.campaigns import Campaign
 
 def transform_user(user: User):
     return {
-        "id": user.id,
+        "id": str(user.id),
         "name": user.name,
         "username": user.username,
         "bio": user.bio,
@@ -14,12 +14,12 @@ def transform_user(user: User):
         "linkedin_link": user.linkedin_link,
         "instagram_link": user.instagram_link,
         "phone_number": user.phone_number,
-        "created_at": user.created_at,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
     }
 
 def transform_campaign(campaign: Campaign):
     return {
-        "id": campaign.id,
+        "id": str(campaign.id),
         "name": campaign.name,
         "client": campaign.client,
         "channel": campaign.channel,
@@ -32,6 +32,6 @@ def transform_campaign(campaign: Campaign):
         "revenue": campaign.revenue,
         "ctr": round((campaign.clicks / campaign.impressions) * 100, 2) if campaign.impressions > 0 else 0.0,
         "roas": round(campaign.revenue / campaign.spend, 2) if campaign.spend > 0 else 0.0,
-        "user_id": campaign.user_id,
-        "created_at": campaign.created_at
+        "user_id": str(campaign.user_id),
+        "created_at": campaign.created_at.isoformat() if campaign.created_at else None,
     }

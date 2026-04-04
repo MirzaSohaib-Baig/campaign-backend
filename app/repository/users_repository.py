@@ -34,5 +34,6 @@ class UserRepository(BaseRepository):
     
     def update_user(self, user_id: str, schema):
         update_user = UpdateUser(**schema.dict(exclude_unset=True))
-        update_user.password = hash_password(update_user.password)
+        if update_user.password is not None:
+            update_user.password = hash_password(update_user.password)
         return self.update(id=user_id, schema=update_user)

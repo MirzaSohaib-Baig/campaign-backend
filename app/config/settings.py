@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     BACKEND_CORS_ORIGINS: list = [
         "http://localhost:3000",
-        "http://localhost:5173/",
+        "http://localhost:5173",
         "https://localhost:3000",
         "http://127.0.0.1:8090",
         "https://127.0.0.1:8090",
@@ -42,13 +42,14 @@ class Settings(BaseSettings):
     )
 
     PASSWORD_REGEX: str = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+])[A-Za-z\d!@#$%^&*()_+]{8,}$"
+    EMAIL_REGEX: str = r"(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)"
     JWT_SECRET_KEY: str = "secret"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     DATETIME_FORMAT: str = "%Y-%m-%dT%H:%M:%S"
     DATE_FORMAT: str = "%Y-%m-%d"
-    MEDIA_URL: str = "app/uploads"
+    MEDIA_URL: str = "app/uploads" 
 
     class Config:
         case_sensitive = True

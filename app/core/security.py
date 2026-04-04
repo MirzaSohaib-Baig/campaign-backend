@@ -64,7 +64,6 @@ def create_access_token(
 
 
 def generate_access_token(user: Dict) -> (str, str):
-    user = user if isinstance(user, dict) else user.dict()
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return create_access_token(
         data={
@@ -76,7 +75,6 @@ def generate_access_token(user: Dict) -> (str, str):
 
 
 def generate_refresh_token(user: Dict) -> (str, str):
-    user = user if isinstance(user, dict) else user.dict()
     refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     return create_access_token(
         data={"id": str(user.get("id")), "type": "refresh"}, expires_delta=refresh_token_expires

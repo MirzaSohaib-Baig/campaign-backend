@@ -4,8 +4,7 @@ from sqlalchemy.orm import relationship
 
 class RefreshToken(BaseModel):
     __tablename__ = "refresh_tokens"
-
-    id = Column(Integer, primary_key=True, index=True)
+    
     user_id = Column(ForeignKey("users.id"), nullable=False)
     token = Column(String, unique=True, index=True)
     expires_at = Column(DateTime)

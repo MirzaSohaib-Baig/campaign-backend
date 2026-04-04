@@ -9,7 +9,7 @@ class BaseRepository:
         self.db = db
 
     def create(self, schema):
-        query = self.model(**schema.dict())
+        query = self.model(**schema.dict(exclude={"confirm_password"}))
         try:
             self.db.add(query)
             self.db.commit()
@@ -33,7 +33,7 @@ class BaseRepository:
         for key, value in filters.items():
             query = query.filter(getattr(self.model, key) == value)
             
-        if client is not None and hasattr(self.model, "client"):
+        if client and client.strip() and hasattr(self.model, "client"):
             query = query.filter(self.model.client == client)
 
         if order_by is not None:

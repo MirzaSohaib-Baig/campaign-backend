@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response, Request
+from fastapi import APIRouter, Depends, Request
 from app.core.exceptions import AuthError, InvalidOperationError
 from app.core.security import JWTBearer
 from app.helpers import messages
@@ -35,25 +35,28 @@ def user_sign_up(payload: SignUp, user_service: UserService = Depends()):
 
 
 @router.post("/login")
-def user_login(payload: Login, response: Response, user_service: UserService = Depends()):
+def user_login(payload: Login, user_service: UserService = Depends()):
     try:
         data = user_service.login_user(payload=payload)
 
         tokens = data["tokens"]
 
-        if payload.keepSignedIn:
-            response.set_cookie(
-                key="refresh_token",
-                value=tokens["refresh_token"],
-                httponly=True,
-                secure=True,
-                samesite="lax",
-                expires=tokens["refresh_expires_in"]
-            )
-        return send_data_with_info(
+        json_response = send_data_with_info(
             info=messages.LOGIN_SUCCESS,
             data=data,
         )
+        if payload.keepSignedIn:
+            json_response.set_cookie(
+                key="refresh_token",
+                value=tokens["refresh_token"],
+                httponly=True,
+                secure=False,
+                samesite="lax",
+                path="/",
+                # expires=tokens["refresh_expires_in"]
+                max_age=60 * 60 * 24 * 7
+            )
+        return json_response
     except InvalidOperationError as e:
         return client_side_error(
             user_msg=str(e),
@@ -65,16 +68,17 @@ def user_login(payload: Login, response: Response, user_service: UserService = D
         )
 
 @router.post("/logout")
-def user_logout( request: Request, response: Response, user_service: UserService = Depends()):
+def user_logout( request: Request, user_service: UserService = Depends()):
     try:
         refresh_token = request.cookies.get("refresh_token")
         if refresh_token:
             user_service.logout(refresh_token=refresh_token)
-        response.delete_cookie(key="refresh_token", httponly=True, secure=True, samesite="lax")
-        return send_data_with_info(
+        json_response = send_data_with_info(
             info=messages.LOGOUT_SUCCESS,
             data={},
         )
+        json_response.delete_cookie(key="refresh_token", httponly=True, secure=False, samesite="lax", path="/")
+        return json_response
     except Exception as e:
         return internal_server_error(
             user_msg=messages.LOGOUT_FAILED,
@@ -82,7 +86,7 @@ def user_logout( request: Request, response: Response, user_service: UserService
         )
 
 @router.post("/refresh")
-def refresh_token(request: Request, response: Response, user_service: UserService = Depends()):
+def refresh_token(request: Request, user_service: UserService = Depends()):
     try:
         refresh_token_cookie = request.cookies.get("refresh_token")
 
@@ -91,18 +95,23 @@ def refresh_token(request: Request, response: Response, user_service: UserServic
         
         data = user_service.refresh(refresh_token=refresh_token_cookie)
 
-        response.set_cookie(
-            key="refresh_token",
-            value=data["new_refresh_token"],
-            httponly=True,
-            secure=True,
-            samesite="lax",
-            expires=data["new_refresh_expires_in"]
-        )
-        return send_data_with_info(
+        json_response = send_data_with_info(
             info=messages.TOKEN_REFRESH_SUCCESS,
             data=data,
         )
+
+        json_response.set_cookie(
+            key="refresh_token",
+            value=data["new_refresh_token"],
+            httponly=True,
+            secure=False,
+            samesite="lax",
+            path="/",
+            # expires=data["new_refresh_expires_in"]
+            max_age=60 * 60 * 24 * 7
+        )
+
+        return json_response
     except AuthError as e:
         return client_side_error(
             user_msg=str(e),
@@ -176,6 +185,7 @@ def delete_user(user_id: str, user_service: UserService = Depends()):
 def update_user(payload: UpdateUser, user_service: UserService = Depends()):
     try:
         data = user_service.update_user(payload=payload)
+        print(data)
         return send_data_with_info(
             info=messages.UPDATE_SUCCESS + "user",
             data=data,
@@ -189,12 +199,3 @@ def update_user(payload: UpdateUser, user_service: UserService = Depends()):
             user_msg=messages.UPDATE_FAILED + "user",
             error=str(e),
         )
-
-# @router.post("/logout")
-# def user_logout(response: Response):
-#     response.delete_cookie(key="access_token", httponly=True, secure=True, samesite="lax")
-#     response.delete_cookie(key="refresh_token", httponly=True, secure=True, samesite="lax")
-#     return send_data_with_info(
-#         info=messages.LOGOUT_SUCCESS,
-#         data={},
-#     )

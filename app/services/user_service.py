@@ -58,10 +58,17 @@ class UserService(BaseService):
     def refresh(self, refresh_token: str):
         stored_token = self.refresh_token_repository.get_refresh_token(refresh_token)
 
+        # print("stored_token", stored_token)
+
         if not stored_token:
             raise AuthError("Refresh token is invalid or revoked.")
         
-        if stored_token.expires_at < datetime.now(maintime.timezone.utc):
+            # Fix naive vs aware comparison
+        expires_at = stored_token.expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=maintime.timezone.utc)
+        
+        if expires_at < datetime.now(maintime.timezone.utc):
             raise AuthError("Refresh token has expired.")
         
         payload = decode_token(refresh_token)
@@ -69,20 +76,21 @@ class UserService(BaseService):
         if payload["type"] != "refresh":
             raise AuthError("Invalid token type.")
 
-        user_id = payload["id"]
+        user = self.repository.get_user_by_id(payload["id"])
+
+        if not user:
+            raise NotFoundError(messages.NOT_FOUND + "user")
+        
+        user = transform_user(user)
 
         self.refresh_token_repository.revoke_refresh_token(refresh_token)
 
-        new_access_token, new_access_token_expires = generate_access_token({"id": user_id})
-        new_refresh_token, refresh_token_expires = generate_refresh_token({"id": user_id})
+        new_access_token, new_access_token_expires = generate_access_token(user)
+        new_refresh_token, new_refresh_token_expires = generate_refresh_token(user)
 
-        self.refresh_token_repository.create_refresh_token({
-            "user_id": user_id,
-            "token": new_refresh_token,
-            "expires_at": refresh_token_expires
-        })
+        self.refresh_token_repository.create_refresh_token(user_id=user["id"], token=new_refresh_token, expires_at=new_refresh_token_expires)
 
-        return {"new_access_token": new_access_token, "new_access_expires_in": new_access_token_expires, "new_refresh_token": new_refresh_token, "new_refresh_expires_in": refresh_token_expires}
+        return {"new_access_token": new_access_token, "new_access_expires_in": new_access_token_expires, "new_refresh_token": new_refresh_token, "new_refresh_expires_in": new_refresh_token_expires}
     
     def logout(self, refresh_token: str):
         self.refresh_token_repository.revoke_refresh_token(refresh_token)
