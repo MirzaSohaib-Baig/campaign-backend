@@ -1,10 +1,23 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from app.config.settings import settings
 import uvicorn
 from app.config.database_config import init_db
 from app.routers.routes import *
+from app.routers.responses import custom_rate_limit_handler
+from slowapi.errors import RateLimitExceeded
+
+def get_real_ip(request: Request) -> str:
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+    return request.client.host
+
+limiter = Limiter(key_func=get_real_ip, default_limits=["100/minute"])
+# limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -22,6 +35,9 @@ app.add_middleware(
     # expose_headers=["*"],
 )
 
+app.state.limiter = limiter
+
+app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 
 @app.get("/")
 def index():

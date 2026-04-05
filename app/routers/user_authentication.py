@@ -185,7 +185,7 @@ def delete_user(user_id: str, user_service: UserService = Depends()):
 def update_user(payload: UpdateUser, user_service: UserService = Depends()):
     try:
         data = user_service.update_user(payload=payload)
-        print(data)
+        # print(data)
         return send_data_with_info(
             info=messages.UPDATE_SUCCESS + "user",
             data=data,
