@@ -19,7 +19,8 @@ class AlertRuleRepository(BaseRepository):
         return [transform_alert_rule(rule) for rule in rules]
 
     def get_rules_for_user(self, user_id: str) -> list:
-        return self.read_where(user_id=user_id)
+        rules = self.read_where(user_id=user_id)
+        return [transform_alert_rule(rule) for rule in rules]
 
     def delete_rule(self, rule_id: str) -> None:
         return self.delete(id=rule_id)

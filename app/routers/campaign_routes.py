@@ -71,7 +71,7 @@ def create_campaign(payload: CampaignSchema, request: Request, campaign_service:
             error=str(e),
         )
         
-@router.patch("/")
+@router.patch("/", dependencies=[Depends(JWTBearer())])
 async def update_campaign(payload: UpdateCampaignSchema, request: Request, campaign_service: CampaignService = Depends()):
     try:
         data = await campaign_service.update_campaign(payload=payload)
