@@ -16,9 +16,9 @@ router = APIRouter(
 )
 
 @router.get("s/", dependencies=[Depends(JWTBearer())])
-def get_all_campaigns(request: Request, page_number: int = 1, page_limit: int = 10, client: str = None, campaign_service: CampaignService = Depends()):
+def get_all_campaigns(request: Request, page_number: int = 1, page_limit: int = 10, client: str = None, user_id: str = None, campaign_service: CampaignService = Depends()):
     try:
-        data = campaign_service.get_all_campaigns(page_number=page_number, page_limit=page_limit, client=client)
+        data = campaign_service.get_all_campaigns(page_number=page_number, page_limit=page_limit, client=client, user_id=user_id)
         total_count = campaign_service.get_campaign_count()
         return send_data_with_info(
             info=messages.ITEMS_FETCHED + "campaigns",

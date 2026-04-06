@@ -17,8 +17,8 @@ class CampaignRepository(BaseRepository):
     def get_campaign_by_id(self, id):
         return self.read_one(id)
 
-    def get_all_campaigns(self, page_number, page_limit, client=None):
-        campaigns = self.read_all(page=page_number, limit=page_limit, client=client)
+    def get_all_campaigns(self, page_number, page_limit, client=None, user_id=None):
+        campaigns = self.read_all(page=page_number, limit=page_limit, client=client, user_id=user_id)
         return [transform_campaign(campaign) for campaign in campaigns]
 
     def get_campaign_count(self):

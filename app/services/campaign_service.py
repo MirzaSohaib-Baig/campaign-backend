@@ -26,8 +26,8 @@ class CampaignService(BaseService):
             raise NotFoundError(messages.NOT_FOUND + "campaign")
         return transform_campaign(campaign)
     
-    def get_all_campaigns(self, page_number, page_limit, client=None):
-        return self.repository.get_all_campaigns(page_number=page_number, page_limit=page_limit, client=client)
+    def get_all_campaigns(self, page_number, page_limit, client=None, user_id=None):
+        return self.repository.get_all_campaigns(page_number=page_number, page_limit=page_limit, client=client, user_id=user_id)
     
     def get_campaign_count(self):
         return self.repository.get_campaign_count()

@@ -23,7 +23,7 @@ class BaseRepository:
             raise e
 
     def read_all(
-        self, eager=False, order_by=None, limit: int = 10, page: int = 1, client: str = None,  **filters
+        self, user_id: str = None, eager=False, order_by=None, limit: int = 10, page: int = 1, client: str = None,  **filters
     ):
         query = self.db.query(self.model)
         if eager:
@@ -35,6 +35,9 @@ class BaseRepository:
             
         if client and client.strip() and hasattr(self.model, "client"):
             query = query.filter(self.model.client == client)
+        
+        if user_id and user_id.strip() and hasattr(self.model, "user_id"):
+            query = query.filter(self.model.user_id == user_id)
 
         if order_by is not None:
             query = query.order_by(order_by)
