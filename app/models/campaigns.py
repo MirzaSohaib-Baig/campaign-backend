@@ -17,6 +17,8 @@ class Campaign(BaseModel):
     revenue = Column(Float, nullable=False)
     user_id = Column(ForeignKey("users.id"), nullable=False)
     user = relationship("User", back_populates="campaigns")
+    notifications = relationship("Notification", back_populates="campaigns")
+    alert_rules = relationship("AlertRule", back_populates="campaigns")
 
     def __str__(self):
         return self.name

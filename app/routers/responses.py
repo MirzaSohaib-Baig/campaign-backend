@@ -1,15 +1,15 @@
 from fastapi.responses import ORJSONResponse
-from slowapi.errors import RateLimitExceeded
-from fastapi import Request
+# from slowapi.errors import RateLimitExceeded
+# from fastapi import Request
 
-async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    return ORJSONResponse(
-        status_code=429,
-        content={
-            "error": "Rate limit exceeded",
-            "detail": f"Too many requests. Try again in {exc.retry_after} seconds."
-        }
-    )
+# async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
+#     return ORJSONResponse(
+#         status_code=429,
+#         content={
+#             "error": "Rate limit exceeded",
+#             "detail": f"Too many requests. Try again in {exc.limit} seconds."
+#         }
+#     )
 
 
 def client_side_error(user_msg: str, status_code: int = 400):

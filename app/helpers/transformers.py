@@ -1,5 +1,6 @@
 from app.models.users import User
 from app.models.campaigns import Campaign
+from app.models.notification_models import Notification, AlertRule
 
 def transform_user(user: User):
     return {
@@ -34,4 +35,26 @@ def transform_campaign(campaign: Campaign):
         "roas": round(campaign.revenue / campaign.spend, 2) if campaign.spend > 0 else 0.0,
         "user_id": str(campaign.user_id),
         "created_at": campaign.created_at.isoformat() if campaign.created_at else None,
+    }
+
+def transform_alert_rule(alert_rule: AlertRule):
+    return {
+        "id": str(alert_rule.id),
+        "user_id": str(alert_rule.user_id),
+        "campaign_id": str(alert_rule.campaign_id),
+        "alert_type": alert_rule.alert_type,
+        "threshold": alert_rule.threshold,
+        "is_active": alert_rule.is_active,
+        "created_at": alert_rule.created_at.isoformat() if alert_rule.created_at else None,
+    }
+
+def transform_notification(notification: Notification):
+    return {
+        "id": str(notification.id),
+        "user_id": str(notification.user_id),
+        "alert_type": notification.alert_type,
+        "message": notification.message,
+        "campaign_id": str(notification.campaign_id),
+        "is_read": notification.is_read,
+        "created_at": notification.created_at.isoformat() if notification.created_at else None,
     }

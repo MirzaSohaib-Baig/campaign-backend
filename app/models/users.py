@@ -20,6 +20,8 @@ class User(BaseModel):
 
     campaigns = relationship("Campaign", back_populates="user")
     refresh_tokens = relationship("RefreshToken", back_populates="user")
+    notifications = relationship("Notification", back_populates="user")
+    alert_rules = relationship("AlertRule", back_populates="user")
 
     def __str__(self):
         return self.username

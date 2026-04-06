@@ -3,6 +3,9 @@ from app.helpers import messages
 from app.helpers.transformers import transform_campaign
 from app.repository.campaigns_repository import CampaignRepository
 from app.services.base_service import BaseService
+from app.services.notification_service import NotificationService
+from app.repository.notifications_repository import NotificationRepository
+from app.repository.alert_rule_repository import AlertRuleRepository
 from fastapi import Depends
 
 class CampaignService(BaseService):
@@ -32,7 +35,7 @@ class CampaignService(BaseService):
     def delete_campaign(self, campaign_id):
         return self.repository.delete_campaign(campaign_id=campaign_id)
     
-    def update_campaign(self, payload):
+    async def update_campaign(self, payload):
         campaign = self.repository.get_campaign_by_id(payload.campaign_id)
         if not campaign:
             raise NotFoundError(messages.NOT_FOUND + "campaign")
@@ -40,4 +43,10 @@ class CampaignService(BaseService):
         payload.client = payload.client.strip() if payload.client else campaign.client
         payload.channel = payload.channel.strip() if payload.channel else campaign.channel
         updated_campaign = self.repository.update_campaign(campaign_id=payload.campaign_id, schema=payload)
+
+        notification_service = NotificationService(
+            notification_repo=NotificationRepository(db=self.repository.db),
+            alert_rule_repo=AlertRuleRepository(db=self.repository.db),
+        )
+        await notification_service.check_and_notify(transform_campaign(updated_campaign))
         return transform_campaign(updated_campaign)

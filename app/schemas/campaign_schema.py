@@ -1,6 +1,4 @@
-import re
-from pydantic import BaseModel, computed_field
-from app.config.settings import settings
+from pydantic import BaseModel
 from typing import Optional
 
 class CampaignSchema(BaseModel):

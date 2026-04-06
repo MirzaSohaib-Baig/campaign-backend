@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from app.core.exceptions import InvalidOperationError
-from app.core.security import JWTBearer
 from app.core.security import JWTBearer
 from app.helpers import messages
 from app.routers.responses import (
@@ -17,7 +16,7 @@ router = APIRouter(
 )
 
 @router.get("s/", dependencies=[Depends(JWTBearer())])
-def get_all_campaigns(page_number: int = 1, page_limit: int = 10, client: str = None, campaign_service: CampaignService = Depends()):
+def get_all_campaigns(request: Request, page_number: int = 1, page_limit: int = 10, client: str = None, campaign_service: CampaignService = Depends()):
     try:
         data = campaign_service.get_all_campaigns(page_number=page_number, page_limit=page_limit, client=client)
         total_count = campaign_service.get_campaign_count()
@@ -37,7 +36,7 @@ def get_all_campaigns(page_number: int = 1, page_limit: int = 10, client: str = 
         )
         
 @router.get("/", dependencies=[Depends(JWTBearer())])
-def get_campaign_by_id(campaign_id: str, campaign_service: CampaignService = Depends()):
+def get_campaign_by_id(campaign_id: str, request: Request, campaign_service: CampaignService = Depends()):
     try:
         data = campaign_service.get_campaign_by_id(campaign_id=campaign_id)
         return send_data_with_info(
@@ -55,7 +54,7 @@ def get_campaign_by_id(campaign_id: str, campaign_service: CampaignService = Dep
         )
         
 @router.post("/", dependencies=[Depends(JWTBearer())])
-def create_campaign(payload: CampaignSchema, campaign_service: CampaignService = Depends()):
+def create_campaign(payload: CampaignSchema, request: Request, campaign_service: CampaignService = Depends()):
     try:
         data = campaign_service.create_campaign(payload=payload)
         return send_data_with_info(
@@ -72,10 +71,10 @@ def create_campaign(payload: CampaignSchema, campaign_service: CampaignService =
             error=str(e),
         )
         
-@router.patch("/", dependencies=[Depends(JWTBearer())])
-def update_campaign(payload: UpdateCampaignSchema, campaign_service: CampaignService = Depends()):
+@router.patch("/")
+async def update_campaign(payload: UpdateCampaignSchema, request: Request, campaign_service: CampaignService = Depends()):
     try:
-        data = campaign_service.update_campaign(payload=payload)
+        data = await campaign_service.update_campaign(payload=payload)
         return send_data_with_info(
             info=messages.UPDATE_SUCCESS + "campaign",
             data=data,
@@ -85,13 +84,14 @@ def update_campaign(payload: UpdateCampaignSchema, campaign_service: CampaignSer
             user_msg=str(e),
         )
     except Exception as e:
+        print(e)
         return internal_server_error(
             user_msg=messages.UPDATE_FAILED + "campaign",
             error=str(e),
         )
         
 @router.delete("/", dependencies=[Depends(JWTBearer())])
-def delete_campaign(campaign_id: str, campaign_service: CampaignService = Depends()):
+def delete_campaign(campaign_id: str, request: Request, campaign_service: CampaignService = Depends()):
     try:
         data = campaign_service.delete_campaign(campaign_id=campaign_id)
         return send_data_with_info(

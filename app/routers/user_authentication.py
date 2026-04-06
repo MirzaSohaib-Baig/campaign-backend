@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Request
 from app.core.exceptions import AuthError, InvalidOperationError
 from app.core.security import JWTBearer
+from app.core.limiter import limiter
 from app.helpers import messages
 from app.routers.responses import (
     client_side_error,
@@ -10,13 +11,14 @@ from app.routers.responses import (
 from app.schemas.user_auth_schema import ChangePassword, Login, SignUp, UpdateUser
 from app.services.user_service import UserService
 
+
 router = APIRouter(
     prefix="/auth",
     tags=["user authentication"],
 )
 
 @router.post("/signup")
-def user_sign_up(payload: SignUp, user_service: UserService = Depends()):
+def user_sign_up(payload: SignUp, request: Request, user_service: UserService = Depends()):
     try:
         data = user_service.create_user(payload=payload)
         return send_data_with_info(
@@ -35,7 +37,8 @@ def user_sign_up(payload: SignUp, user_service: UserService = Depends()):
 
 
 @router.post("/login")
-def user_login(payload: Login, user_service: UserService = Depends()):
+@limiter.limit("5/minute")
+def user_login(payload: Login, request: Request, user_service: UserService = Depends()):
     try:
         data = user_service.login_user(payload=payload)
 
@@ -123,7 +126,7 @@ def refresh_token(request: Request, user_service: UserService = Depends()):
         )
     
 @router.post("/", dependencies=[Depends(JWTBearer())])
-def change_user_password(payload: ChangePassword, user_service: UserService = Depends()):
+def change_user_password(payload: ChangePassword, request: Request, user_service: UserService = Depends()):
     try:
 
         # Call the service method to change the password
@@ -146,7 +149,7 @@ def change_user_password(payload: ChangePassword, user_service: UserService = De
         )
 
 @router.get("/", dependencies=[Depends(JWTBearer())])
-def user_profile(user_id: str, user_service: UserService = Depends()):
+def user_profile(user_id: str, request: Request, user_service: UserService = Depends()):
     try:
         data = user_service.get_user_info(user_id=user_id)
         return send_data_with_info(
@@ -164,7 +167,7 @@ def user_profile(user_id: str, user_service: UserService = Depends()):
         )
 
 @router.delete("/", dependencies=[Depends(JWTBearer())])
-def delete_user(user_id: str, user_service: UserService = Depends()):
+def delete_user(user_id: str, request: Request, user_service: UserService = Depends()):
     try:
         data = user_service.delete_user(user_id=user_id)
         return send_data_with_info(
@@ -182,7 +185,7 @@ def delete_user(user_id: str, user_service: UserService = Depends()):
         )
 
 @router.patch("/", dependencies=[Depends(JWTBearer())])
-def update_user(payload: UpdateUser, user_service: UserService = Depends()):
+def update_user(payload: UpdateUser, request: Request, user_service: UserService = Depends()):
     try:
         data = user_service.update_user(payload=payload)
         # print(data)
