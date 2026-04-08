@@ -21,10 +21,9 @@ class NotificationRepository(BaseRepository):
         return [transform_notification(notification) for notification in query]
 
     def mark_all_read(self, user_id: str):
-        self.db.query(self.model).filter(
-            self.model.user_id == user_id,
-            self.model.is_read == False,
-        ).update({"is_read": True})
+        query = self.read_where(user_id=user_id, is_read=False)
+        for notifications in query:
+            notifications.is_read = True
         self.db.commit()
 
     def mark_one_read(self, notification_id: str):
@@ -38,3 +37,6 @@ class NotificationRepository(BaseRepository):
             .filter(self.model.user_id == user_id, self.model.is_read == False)
             .count()
         )
+    
+    def get_unread_notifications(self, campaign_id: str):
+        return self.read_where(campaign_id=campaign_id, is_read=False)

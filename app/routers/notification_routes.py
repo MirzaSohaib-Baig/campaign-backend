@@ -72,7 +72,7 @@ def get_unread_count(
             error=str(e),
         )
 
-@router.patch("s/read", dependencies=[Depends(JWTBearer())])
+@router.patch("s/read")
 def mark_all_read(
     user_id: str,
     service: NotificationService = Depends(),

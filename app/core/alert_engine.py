@@ -6,37 +6,42 @@ ALERT_CHECKS = {
     AlertType.CTR_LOW: {
         "field":   "ctr",
         "message": lambda c, t: f"CTR dropped to {c['ctr']}% (threshold: {t}%) on campaign '{c['name']}'",
-        "check":   lambda val, threshold: val < threshold,
+        "check":   lambda val, threshold: val < threshold,   # trigger when CTR IS below threshold
     },
     AlertType.SPEND_HIGH: {
         "field":   "spend",
         "message": lambda c, t: f"Spend ${c['spend']} exceeds {t}% of budget on campaign '{c['name']}'",
-        "check":   lambda val, threshold: val < threshold,   # val = spend/budget * 100
+        "check":   lambda val, threshold: val > threshold,   # ← trigger when spend % IS above threshold
     },
     AlertType.ROAS_LOW: {
         "field":   "roas",
         "message": lambda c, t: f"ROAS dropped to {c['roas']}x (threshold: {t}x) on campaign '{c['name']}'",
-        "check":   lambda val, threshold: val < threshold,
+        "check":   lambda val, threshold: val < threshold,   # trigger when ROAS IS below threshold
     },
     AlertType.BUDGET_EXCEEDED: {
         "field":   "spend",
         "message": lambda c, t: f"Budget exceeded on campaign '{c['name']}' — spent ${c['spend']} of ${c['budget']}",
-        "check":   lambda val, threshold: val >= threshold,  # val = spend
+        "check":   lambda val, threshold: val >= threshold,  # trigger when spend IS above budget
     },
     AlertType.CONVERSIONS_LOW: {
         "field":   "conversions",
         "message": lambda c, t: f"Conversions dropped to {c['conversions']} (threshold: {t}) on campaign '{c['name']}'",
-        "check":   lambda val, threshold: val < threshold,
+        "check":   lambda val, threshold: val < threshold,   # trigger when conversions IS below threshold
     },
 }
-
 # app/core/alert_engine.py
 
-def evaluate_campaign(campaign: dict, rules: list) -> list[dict]:
+def evaluate_campaign(campaign: dict, rules: list, existing_notifications: list) -> list[dict]:
     triggered = []
 
+    # Build a set of alert types already fired for this campaign
+    # so we don't re-fire the same alert repeatedly
+    already_notified = {
+        n.alert_type for n in existing_notifications
+        if str(n.campaign_id) == str(campaign["id"]) and not n.is_read
+    }
+
     for rule in rules:
-        # Handle both SQLAlchemy objects and dicts
         is_active   = rule.is_active   if hasattr(rule, "is_active")   else rule.get("is_active", True)
         alert_type  = rule.alert_type  if hasattr(rule, "alert_type")  else rule.get("alert_type")
         threshold   = rule.threshold   if hasattr(rule, "threshold")   else rule.get("threshold")
@@ -44,6 +49,10 @@ def evaluate_campaign(campaign: dict, rules: list) -> list[dict]:
         campaign_id = rule.campaign_id if hasattr(rule, "campaign_id") else rule.get("campaign_id")
 
         if not is_active:
+            continue
+
+        # Skip if we already sent this alert and user hasn't read it yet
+        if alert_type in already_notified:
             continue
 
         alert_def = ALERT_CHECKS.get(alert_type)
@@ -57,7 +66,7 @@ def evaluate_campaign(campaign: dict, rules: list) -> list[dict]:
             continue
 
         if alert_type == AlertType.SPEND_HIGH:
-            budget = campaign.get("budget")
+            budget = campaign.get("budget", 0)
             value  = (campaign["spend"] / budget * 100) if budget > 0 else 0
 
         if alert_def["check"](value, threshold):

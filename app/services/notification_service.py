@@ -18,7 +18,8 @@ class NotificationService:
     async def check_and_notify(self, campaign):
         rules = self.alert_rule_repo.get_rules_for_campaign(campaign.get("id"))
         # print("Rules for campaign", rules)
-        triggered = evaluate_campaign(campaign, rules)
+        existing_notifications = self.notification_repo.get_unread_notifications(campaign.get("id"))
+        triggered = evaluate_campaign(campaign, rules, existing_notifications)
         # print("Triggered", triggered)
         for alert in triggered:
             # print("Saving notification", alert)
